@@ -14,11 +14,11 @@ class System {
 
     std::vector<std::unique_ptr<Agent>> agents; //owns all agents
 
-    SectionPool pool; //pool lifetime is tied to system lifetime
+    SectionPool pool; //pool id owned by System
 
 public:
 
-    Agent* createAgent(const std::string& name) //creates an agent , uses agent pointer
+    Agent* createAgent(const char& name) //creates an agent , uses agent pointer
     {
         auto a = std::make_unique<Agent>(name, this); //after creating, it transfers ownership to system
 
@@ -29,7 +29,7 @@ public:
         return ptr;
     }
 
-    Section* createSection(const std::string& id,
+    Section* createSection(const char& id,
                            double c = 0.0,
                            double u = 1.0,
                            int g = 0)
@@ -37,7 +37,7 @@ public:
         return pool.createSection(id, c, u, g); // this enables creation of section
     }
 
-    Section* getSection(const std::string& id)
+    Section* getSection(const char& id)
     {
         return pool.getSection(id); //gets section
     }
@@ -48,7 +48,7 @@ public:
     }
 };
 
-void Agent::updateSection(const std::string& id,
+void Agent::updateSection(const char& id,
                             double certainty,
                             double uncertainty,
                             int gaps)
@@ -71,7 +71,7 @@ void Agent::updateSection(const std::string& id,
 std::vector<Section*> Agent::shortestCertainPath(Section* start,
                                                  Section* goal) 
 {
- //min-heap of nodes - alays expand the most promising section next
+ //min-heap of nodes - always expand the most promising section next
     std::priority_queue<NodeCost, //stores nodes + accumulated cost
                         std::vector<NodeCost>,
                         std::greater<NodeCost>> pq; //ensures the node with the lowest cost comes first
