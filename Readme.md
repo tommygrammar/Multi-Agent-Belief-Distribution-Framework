@@ -8,7 +8,8 @@
     - `System.h`
 2. Example
     - `example.cpp`
-3. Makefile
+3. Build Generator
+    - `CMakeLists.txt`
 
 ## Core Idea
 1. Agents share beliefs about sections
@@ -16,15 +17,21 @@
 3. This information influences navigational decisions
 4. Coordination is decertralized.
 
-## How to run
+## How to build and run
 ```bash
-git clone Multi-Agent-Belief-Distribution-Framework
+git clone github.com/tommygrammar/Multi-Agent-Belief-Distribution-Framework
 
 cd Multi-Agent-Belief-Distribution-Framework
 
+mkdir build
+
+cd build
+
+cmake ..
+
 make
 
-./run
+./multi_agent
 
 ```
 
@@ -33,13 +40,11 @@ make
 1. `SectionPool.h`
 ```cpp
 #include <array> //an array container whose size is known at compile time as we know the maximum number of sections, this enables compiler optimizations
-#include <string> //for identifiers, specifically id which is a section identifier
 #include <vector> //for neighbours which is an adjacent list of neighbours
 ```
 
 2. `Agent.h`
 ```cpp
-#include <string> //Agent identifiers
 #include <vector> //vectors
 #include "SectionPool.h" //imports section memory pool and sections itself
 #include <iostream> //debug prints
@@ -50,7 +55,6 @@ make
 #include <vector> //containers
 #include "SectionPool.h" //pools
 #include "Agent.h" //agent class
-#include <string> //identifiers
 #include <memory> //smart pointers -> unique_ptr, make unique
 #include <unordered_map> //has table dictionary for faster lookups
 #include <algorithm> //reverse
@@ -74,16 +78,16 @@ constexpr size_t MAX_SECTIONS = 32;
 - Next, we have the Struct which is:
 ```cpp
 struct Section {
-    std::string id;
+    char id;
     double certainty;
     double uncertainty;
     int gaps;
 
     std::vector<Section*> neighbors; 
     Section()
-        : id(""), certainty(0.0), uncertainty(1.0), gaps(0) {}
+        : id(), certainty(0.0), uncertainty(1.0), gaps(0) {}
 
-    Section(const std::string& id_,
+    Section(const char id_,
             double c = 0.0,
             double u = 1.0,
             int g = 0)
@@ -104,9 +108,9 @@ struct Section {
 - We went for an array pool that would store the sections.
 - `size_t count` counts specifically the number of sections in use currently.
 - The public contains:
-- ` Section* createSection(const std::string& id, double c = 0.0,double u = 1.0,int g = 0)` 
+- ` Section* createSection(const char& id, double c = 0.0,double u = 1.0,int g = 0)` 
     - This creates a new section. We first check if the count of sections is less than the capacity of our memory pool, if it is less than that, we insert an entry of a new section and return the reference of the created one.
-- `Section* getSection(const std::string& id) `
+- `Section* getSection(const char& id) `
     - This gets a specific section by using the argument id.
     - Then we iterate a loop and if we find the instance of id, return the reference of that specific instance.
     - If it fails we return a null pointer.
@@ -127,25 +131,25 @@ struct Section {
     - `System* system` - can borrow from system class but does not own system.
 
 - Its public contains:
-    - `Agent(const std::string& n, System* sys)`  which takes a name and raw pointer to system in order to access system features.
+    - `Agent(const char& n, System* sys)`  which takes a name and raw pointer to system in order to access system features.
     - `void addSection(Section* s)` which adds section my a pointer
-    - `Section* getSection(const std::string& id)` which gets section by id iteration and returns the pointer, if not it returns a null pointer
-    - `void updateSection(const std::string& id,double certainty, double uncertainty,int gaps);` - this updates global beliefs
-    -`void shareBelief(Agent* other, const std::string& sectionId)` - this one shares beliefs, for example, if the current agent shares a section with another agent, then if they have more certainty than the current agent, then what happens is it uses a very simple heuristic that updates the current agent with the section knowledge of the other agent.
+    - `Section* getSection(const char& id)` which gets section by id iteration and returns the pointer, if not it returns a null pointer
+    - `void updateSection(const char& id,double certainty, double uncertainty,int gaps);` - this updates global beliefs
+    -`void shareBelief(Agent* other, const char& sectionId)` - this one shares beliefs, for example, if the current agent shares a section with another agent, then if they have more certainty than the current agent, then what happens is it uses a very simple heuristic that updates the current agent with the section knowledge of the other agent.
     - `std::vector<Section*> shortestCertainPath(Section* start,Section* goal);` - this one finds the shortest most certain path, we will explore it in systems.
-    - `std::string getName() const` - this gets the name of an agent
+    - `char getName() const` - this gets the name of an agent
 
 3. `System.h`
 - This is the system responsible for managing both the pool and the agent. 
 - The system owns both the agents and the memory pool.
 - If the system dies, it ensures the pool and the agent die with it.
 - The public contains:
-    - `Agent* createAgent(const std::string& name)` which creates an agent, after creating an agent, it transfers ownership to the system and returns the pointer of the newly created agent.
-    - `Section* createSection(const std::string& id,double c = 0.0,double u = 1.0,int g = 0)` - creates a section.
-    - `Section* getSection(const std::string& id)` - calles the section function and gets the id.
+    - `Agent* createAgent(const char& name)` which creates an agent, after creating an agent, it transfers ownership to the system and returns the pointer of the newly created agent.
+    - `Section* createSection(const char& id,double c = 0.0,double u = 1.0,int g = 0)` - creates a section.
+    - `Section* getSection(const char& id)` - calles the section function and gets the id.
     - `SectionPool& getPool()` - this gets the whole memory pool.
 
-- Then, still in system.h, we have the `void Agent::updateSection(const std::string& id,double certainty,double uncertainty,int gaps)`. The goal of this is to update the global with new sections.
+- Then, still in system.h, we have the `void Agent::updateSection(const char& id,double certainty,double uncertainty,int gaps)`. The goal of this is to update the global with new sections.
 - Its process is:
     - The pointer points to a sstem instance of a certain id and gets section
     - If certainty available by the current Agent for that section is greater than the one that has just been pooled from the global pool, then it updates the global one.
