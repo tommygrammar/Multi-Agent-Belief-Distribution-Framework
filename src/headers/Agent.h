@@ -26,13 +26,14 @@ struct NodeCost {
 
 // agent class 
 class Agent {
-    std::string name;
-    std::vector<Section*> mySections; //sections owned by the agent, their praw pointers to sections
+    char name;
+    std::vector<Section*> mySections; //sections owned by the agent, their raw pointers to sections
     System* system; //can use system features by borrowing
 
+    
 public:
 
-    Agent(const std::string& n, System* sys)
+    Agent(const char& n, System* sys)
         : name(n), system(sys) {}
 
 
@@ -44,27 +45,27 @@ public:
 
 
 
-    Section* getSection(const std::string& id) // get section by id
+    Section* getSection(const char& id) // get section by id
     {
-        for (auto* s : mySections) //iterates thru all of them and if it gets that id, it returns the raw pointer to that id
+        for (auto* s : mySections) //iterates through all of them and if it gets that id, it returns the raw pointer to that id
             if (s->id == id)
                 return s;
 
-        return nullptr; //else if nothing returns a nulptr
+        return nullptr; //else if nothing returns a nullptr
     }
 
 
 
 
-    //this discovery updates global beliefs
-    void updateSection(const std::string& id,
+    //this updates global beliefs
+    void updateSection(const char& id,
                          double certainty,
                          double uncertainty,
                          int gaps);
 
 
 
-    void shareBelief(Agent* other, const std::string& sectionId) //this one shares beliefs and if they are beaten, they exchange information
+    void shareBelief(Agent* other, const char& sectionId) //this one shares beliefs and if they are better, they exchange information
     {
         Section* mySec = getSection(sectionId);
         Section* otherSec = other->getSection(sectionId);
@@ -95,7 +96,7 @@ public:
 
 
 
-    std::string getName() const //gets name of agent
+    char getName() const //gets name of agent
     {
         return name;
     }
