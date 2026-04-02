@@ -1,103 +1,79 @@
-//Contains the class Agent and the Stuff associated with navigation etc
+//this is our section memory pool implementation
 #pragma once
+#include <array>
 #include <string>
 #include <vector>
-#include "SectionPool.h"
-#include <iostream>
 
 
-// forward declaration so that agent can use system
-class System;
+//section size is always known at compile time
+constexpr size_t MAX_SECTIONS = 32;
 
-//certainty aware djisktra
-struct NodeCost {
+//section structure - id, certainty, uncertainty, gaps, adjacent list neighbours of raw pointers 
+struct Section {
+    double certainty;
+    double uncertainty;
+    int gaps;
+    char id;
 
-    Section* node; //pointers to the section
+    std::vector<Section*> neighbors; //adjacency list, sections connect to sections establishing neighbours, the neigbours are raw pointers pointing to sections
 
-    double cost; //cost to reach this node from start
+    Section()
+        : id(), certainty(0.0), uncertainty(1.0), gaps(0) {}
 
-    bool operator>(const NodeCost& other) const //returns 
+    Section(const char& id_,
+            double c = 0.0,
+            double u = 1.0,
+            int g = 0)
+        : id(id_), certainty(c), uncertainty(u), gaps(g) {}
+
+    void addNeighbor(Section* other) // this adds new neighbours to the end, specifically pointers
     {
-        return cost > other.cost; //returns a bool of whether this cost is greater than the other cost
+        neighbors.push_back(other);
     }
 };
 
 
+//Memory pool
+class SectionPool {
 
-// agent class 
-class Agent {
-    char name;
-    std::vector<Section*> mySections; //sections owned by the agent, their raw pointers to sections
-    System* system; //can use system features by borrowing
+    std::array<Section, MAX_SECTIONS> pool; // max size is known at compile time
 
-    
+    size_t count = 0; // count of the sections in use
+
 public:
 
-    Agent(const char& n, System* sys)
-        : name(n), system(sys) {}
-
-
-
-    void addSection(Section* s) //adds section by pushback, to the back
+    Section* createSection(const char& id,
+                           double c = 0.0,
+                           double u = 1.0,
+                           int g = 0)
     {
-        mySections.push_back(s);
+        if (count >= MAX_SECTIONS) //if count is more or equal to max sections we cannot create more sections
+            return nullptr;
+
+        pool[count] = Section(id, c, u, g);// this one adds a section to the pool, the created one
+
+        return &pool[count++]; //returns the reference of the created one
     }
 
-
-
-    Section* getSection(const char& id) // get section by id
+    Section* getSection(const char& id) 
     {
-        for (auto* s : mySections) //iterates through all of them and if it gets that id, it returns the raw pointer to that id
-            if (s->id == id)
-                return s;
-
-        return nullptr; //else if nothing returns a nullptr
-    }
-
-
-
-
-    //this updates global beliefs
-    void updateSection(const char& id,
-                         double certainty,
-                         double uncertainty,
-                         int gaps);
-
-
-
-    void shareBelief(Agent* other, const char& sectionId) //this one shares beliefs and if they are better, they exchange information
-    {
-        Section* mySec = getSection(sectionId);
-        Section* otherSec = other->getSection(sectionId);
-
-        if (!mySec || !otherSec)
-            return;
-
-        if (mySec->certainty > otherSec->certainty)
+        for (size_t i = 0; i < count; ++i) //we get a section by actively taking in id and iterating to get the one we want, basically if pool[i].id = id
         {
-            otherSec->certainty = mySec->certainty;
-            otherSec->uncertainty = mySec->uncertainty;
-            otherSec->gaps = mySec->gaps;
-
-            std::cout << name
-                      << " shared belief about "
-                      << sectionId
-                      << " with "
-                      << other->name
-                      << "\n";
+            if (pool[i].id == id)
+                return &pool[i]; //returns the reference of that
         }
+
+        return nullptr; //if failed returns nothing
     }
 
-
-
-    // certainty aware Dijkstra - finds the shortest path
-    std::vector<Section*> shortestCertainPath(Section* start,
-                                              Section* goal);
-
-
-
-    char getName() const //gets name of agent
+    size_t size() const //returns count
     {
-        return name;
+        return count;
+    }
+
+    Section* operator[](size_t i) //keeps in an array all of them, contigous array
+    {
+        return &pool[i];
     }
 };
+
