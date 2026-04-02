@@ -8,21 +8,19 @@
 //section size is always known at compile time
 constexpr size_t MAX_SECTIONS = 32;
 
-
-
-//section structure - id, certainty, uncertainty, gaps, adacet list neighbours of raw pointers
+//section structure - id, certainty, uncertainty, gaps, adjacent list neighbours of raw pointers 
 struct Section {
-    std::string id;
     double certainty;
     double uncertainty;
     int gaps;
+    char id;
 
-    std::vector<Section*> neighbors; //adjacency list, sections connect to sections establishing neighbours, the neigboours are raw pointers pointing to sections
+    std::vector<Section*> neighbors; //adjacency list, sections connect to sections establishing neighbours, the neigbours are raw pointers pointing to sections
 
     Section()
-        : id(""), certainty(0.0), uncertainty(1.0), gaps(0) {}
+        : id(), certainty(0.0), uncertainty(1.0), gaps(0) {}
 
-    Section(const std::string& id_,
+    Section(const char& id_,
             double c = 0.0,
             double u = 1.0,
             int g = 0)
@@ -44,7 +42,7 @@ class SectionPool {
 
 public:
 
-    Section* createSection(const std::string& id,
+    Section* createSection(const char& id,
                            double c = 0.0,
                            double u = 1.0,
                            int g = 0)
@@ -57,7 +55,7 @@ public:
         return &pool[count++]; //returns the reference of the created one
     }
 
-    Section* getSection(const std::string& id) 
+    Section* getSection(const char& id) 
     {
         for (size_t i = 0; i < count; ++i) //we get a section by actively taking in id and iterating to get the one we want, basically if pool[i].id = id
         {
@@ -73,7 +71,7 @@ public:
         return count;
     }
 
-    Section* operator[](size_t i) //keeps in an array all of them, contigous arra
+    Section* operator[](size_t i) //keeps in an array all of them, contigous array
     {
         return &pool[i];
     }
